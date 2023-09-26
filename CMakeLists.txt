@@ -5,7 +5,7 @@ project(cache)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(BUILD_TESTS "building tests for cache" OFF)
+option(BUILD_TESTS "building tests for cache" ON)
 file(GLOB SRCS
         "${PROJECT_SOURCE_DIR}/src/main.cpp"
 )

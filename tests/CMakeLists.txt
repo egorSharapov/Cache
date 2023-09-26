@@ -21,7 +21,7 @@ add_executable(
 )
 target_link_libraries(
   cache_test
-  GTest::gtest_main
+  gtest
 )
 
 

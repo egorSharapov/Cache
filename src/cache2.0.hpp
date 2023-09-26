@@ -17,76 +17,75 @@ namespace Cache {
 template <typename Key, typename Value>
 class LFUCache {
   private:
-    using freq_key = size_t;
+    using frequency_t = size_t;
+    using list_it = typename std::list<Key>::iterator;
 
-    std::unordered_map<Key, std::pair<Value, freq_key>> m_cache;
-    std::multimap<freq_key, Key> m_frequency;
+    struct Elem {
+        Value val;
+        frequency_t frequency;
+        list_it it;
+    };
+
+    std::unordered_map<Key, Elem> m_cache;
+    std::unordered_map<frequency_t, std::list<Key>> m_freq;
+    // std::unordered_map<Key, size_t> m_time_stamp;
+
     size_t m_max_load;
-
-    void first_put(Key key, const Value &value) {
-        m_cache.insert({key, {value, 1}});
-        m_frequency.insert({1, key});
-    }
+    frequency_t m_min_freq;
 
   public:
     LFUCache(size_t max_load) : m_cache(max_load), m_max_load(max_load){};
-    ~LFUCache() = default;
 
-    // TODO lookup_update
     template <typename F>
     bool lookup_update(Key key, F get_page) {
-        auto res = m_cache.find(key);
-        if (res == m_cache.end()) {
+        if (m_cache.find(key) == m_cache.end()) {
             if (m_cache.size() == m_max_load) {
-                // find element with minimum frequency
-                auto min_freq_elem = m_frequency.begin();
-                m_cache.erase(min_freq_elem->second);
-                m_frequency.erase(min_freq_elem);
+                // delete elem with minimum frequency
+                m_cache.erase(m_freq[m_min_freq].front());
+                m_freq[m_min_freq].pop_front();
             }
-            first_put(key, get_page(key));
+
+            m_min_freq = 1;
+            m_freq[m_min_freq].push_back(key);
+            m_cache[key] = {get_page(key), m_min_freq,
+                            --m_freq[m_min_freq].end()};
             return false;
-        } else {
-            // update frequncy
-            touch(key);
-            return true;
         }
+        touch(key);
+        return true;
     }
 
     void touch(Key key) {
-        std::cout << "touch!\n";
-        auto res = m_cache.find(key);
-        if (res != m_cache.end()) {
-            auto bucket = m_frequency.equal_range(res->second.second);
-            for (auto elem = bucket.first; elem != bucket.second; ++elem) {
-                if (elem->second == res->first) {
-                    std::cout << "found!\n";
-                    m_frequency.insert({elem->first + 1, key});
-                    m_frequency.erase(elem);
-                    res->second.second += 1;
-                    break;
-                }
-            }
-        }
+        auto &elem = m_cache[key];
+
+        // delete old frequency by iterator
+        m_freq[m_cache[key].frequency].erase(elem.it);
+;
+        // update element frequency
+        m_freq[++m_cache[key].frequency].push_back(key);
+        // update iterator
+        m_cache[key].it = --m_freq[m_cache[key].frequency].end();
+
+        // update frequency minimum
+        m_min_freq += m_freq[m_min_freq].empty();
     }
 
-    std::pair<Value, bool> get(Key key) {
-        auto res = m_cache.find(key);
-        if (res != m_cache.end()) {
-            return {res->second, true};
-        }
-        return {{}, false};
-    }
-
+    bool contains(Key key) { return m_cache.find(key) != m_cache.end(); }
     void print() {
         std::cout << "\nDump:\n";
         for (const auto &elem : m_cache) {
-            std::cout << "[" << elem.first << "]\t" << elem.second.first
-                      << "\t(" << elem.second.second << ")"
+            std::cout << "[" << elem.first << "]\t" << elem.second.val << "\t("
+                      << elem.second.frequency << ")"
                       << "\n";
         }
-        for (const auto &elem : m_frequency) {
-            std::cout << "(" << elem.first << ")\t"
-                      << "[" << elem.second << "]\n";
+    }
+    void print_keys(Key key) {
+        if (m_freq.find(key) != m_freq.end()) {
+            auto res = m_freq[key];
+            for (const auto &elem : res) {
+                std::cout << elem << "->";
+            }
+            std::cout << "\n";
         }
     }
 };
@@ -110,6 +109,7 @@ class IdealCache {
         if (m_cache.find(key) != m_cache.end()) {
             return true;
         }
+
         auto last_elem = future_pages.begin();
         if (m_cache.size() == m_max_load) {
             for (const auto &elem : m_cache) {
@@ -129,6 +129,7 @@ class IdealCache {
         first_put(key, get_page(key));
         return false;
     }
+
     void print() {
         std::cout << "Dump:\n";
         for (const auto &elem : m_cache) {
