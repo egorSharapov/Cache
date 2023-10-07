@@ -1,16 +1,10 @@
-#include <cinttypes>
-#include <cstddef>
 #include <deque>
-#include <iterator>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <iostream>
 #include <list>
-#include <map>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 namespace Cache {
@@ -110,7 +104,12 @@ class IdealCache {
             return true;
         }
 
+        auto res = std::find(future_pages.begin(), future_pages.end(), key);
+        if (res == future_pages.end()) {
+            return false;
+        }
         auto last_elem = future_pages.begin();
+
         if (m_cache.size() == m_max_load) {
             for (const auto &elem : m_cache) {
                 auto res = std::find(future_pages.begin(), future_pages.end(),

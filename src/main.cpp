@@ -4,7 +4,6 @@
 
 std::string get_page(int key) { return "page " + std::to_string(key); }
 
-
 int main() {
     size_t hits = 0;
     std::cout << "LFUCache:\nIn: ";
@@ -18,9 +17,7 @@ int main() {
     for (int i = 0; i < elements_count; ++i) {
         int element = 0;
         std::cin >> element;
-        if (lfu.lookup_update(element, get_page)) {
-            hits += 1;
-        }
+        hits += lfu.lookup_update(element, get_page);
     }
     std::cout << "Out: " << hits << "\n";
     elements_count = 0;
@@ -41,9 +38,7 @@ int main() {
     for (int i = 0 ; i < elements_count; ++i) {
         int current = future_elements.front();
         future_elements.pop_front();
-        if (ideal.lookup_update(current, get_page, future_elements)) {
-            hits += 1;
-        }
+        hits += ideal.lookup_update(current, get_page, future_elements);
     }
     std::cout << "Out: " << hits << "\n";
 }
