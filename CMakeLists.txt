@@ -6,10 +6,17 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_TESTS "building tests for cache" ON)
-file(GLOB SRCS
-        "${PROJECT_SOURCE_DIR}/src/main.cpp"
+
+file(GLOB LFU_SRCS
+        "${PROJECT_SOURCE_DIR}/src/lfu.cpp"
 )
-add_executable(cache ${SRCS})
+
+file(GLOB IDEAL_SRCS
+        "${PROJECT_SOURCE_DIR}/src/ideal.cpp"
+)
+
+add_executable(ideal ${IDEAL_SRCS})
+add_executable(lfu ${LFU_SRCS})
 
 if(BUILD_TESTS)
     add_subdirectory(tests)
